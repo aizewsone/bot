@@ -218,7 +218,7 @@ async def ask_interests(update: Update, context: ContextTypes.DEFAULT_TYPE):
     ]
     reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=True)
     message = (
-        "Отлично! Теперь расскажите, что вам особенно нравится:\n"
+        "Отлично! Теперь расскажите, что вам особенно нравится, можете вручную написать несколько цифр:\n"
         "1 — компьютерные игры🎮\n"
         "2 — создавать что-то новое🖼\n"
         "3 — отдых на природе🍃\n"
@@ -233,7 +233,7 @@ async def handle_interests(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     try:
         user_input = update.message.text.strip()
-        # Проверяем, не является ли ввод одним числом
+  
         if ',' in user_input:
             user_interests = [int(x.strip()) for x in user_input.split(',')]
         else:
