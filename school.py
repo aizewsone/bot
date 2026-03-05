@@ -1,12 +1,29 @@
 import logging
 import pandas as pd
-from sklearn.metrics.pairwise import cosine_similarity
+import math
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import (Application, CommandHandler, MessageHandler, filters, 
                          ConversationHandler, ContextTypes)
 
-logging.basicConfig(format="%(asftime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
+logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+def cosine_similarity_custom(vec1, vec2):
+    """Вычисляет косинусное сходство между двумя векторами"""
+    dot_product = sum(a * b for a, b in zip(vec1, vec2))
+    norm1 = math.sqrt(sum(a * a for a in vec1))
+    norm2 = math.sqrt(sum(b * b for b in vec2))
+    
+    if norm1 == 0 or norm2 == 0:
+        return 0
+    return dot_product / (norm1 * norm2)
+
+def cosine_similarity_matrix(vector, matrix):
+    """Вычисляет сходство между вектором и каждой строкой матрицы"""
+    similarities = []
+    for row in matrix:
+        similarities.append(cosine_similarity_custom(vector, row))
+    return similarities
 
 clubs_data = {
     'club_id': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
@@ -24,7 +41,7 @@ clubs_data = {
 }
 clubs_df = pd.DataFrame(clubs_data)
 
-# Состояния диалога
+
 (QUESTION_MATH, QUESTION_ART, QUESTION_SOCIAL,
  QUESTION_NATURE, QUESTION_PHYSICAL, QUESTION_SCIENCE, QUESTION_INTERESTS) = range(7)
 
@@ -216,7 +233,11 @@ async def handle_interests(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     try:
         user_input = update.message.text.strip()
-        user_interests = [int(x.strip()) for x in user_input.split(',')]
+        # Проверяем, не является ли ввод одним числом
+        if ',' in user_input:
+            user_interests = [int(x.strip()) for x in user_input.split(',')]
+        else:
+            user_interests = [int(user_input)]
         
         for interest in user_interests:
             if interest == 1:
@@ -249,7 +270,7 @@ def recommend_clubs(student_data, clubs_df):
     
     club_vectors = clubs_df[features].values
     
-    similarities = cosine_similarity([student_vector], club_vectors)[0]
+    similarities = cosine_similarity_matrix(student_vector, club_vectors)
     
     results_df = clubs_df.copy()
     results_df['score'] = similarities
@@ -257,17 +278,14 @@ def recommend_clubs(student_data, clubs_df):
     return results_df.sort_values(by='score', ascending=False)
 
 async def show_results(update: Update, context: ContextTypes.DEFAULT_TYPE, user_id: int):
-
     student_profile = user_profiles[user_id]
     
     recommendations = recommend_clubs(student_profile, clubs_df)
     
-
     best_match = recommendations.iloc[0]
     best_name = best_match['name']
     best_percentage = round(best_match['score'] * 100, 1)
     
-
     message = f"\n✅ АНАЛИЗ ЗАВЕРШЕН.\n\n"
     message += f"🎯 ЛУЧШЕЕ НАПРАВЛЕНИЕ ДЛЯ ВАС: {best_name}\n"
     message += f"📊 Соответствие профилю: {best_percentage}%\n\n"
