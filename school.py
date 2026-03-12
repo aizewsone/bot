@@ -297,7 +297,7 @@ async def show_results(update: Update, context: ContextTypes.DEFAULT_TYPE, user_
     else:
         verdict = "🤔 Рекомендуется попробовать, но будьте готовы к тому, что это может быть непривычная сфера."
     
-    message += f"🔍 ВЕРДИКТ ИИ: {verdict}\n\n"
+    message += f"🔍 ИТОГ: {verdict}\n\n"
     message += "🏆 ТОП-3 РЕКОМЕНДАЦИЙ:\n"
     
     # Формируем топ-3 рекомендаций
